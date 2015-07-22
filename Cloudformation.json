@@ -1,0 +1,120 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "NerdPress": {
+      "Type": "AWS::ElasticBeanstalk::Application",
+      "Properties": {
+        "Description": "NerdPress Core Wordpress Deployment"
+      }
+    },
+    "NerdPressVersion": {
+      "Type": "AWS::ElasticBeanstalk::ApplicationVersion",
+      "Properties": {
+        "ApplicationName": { "Ref": "NerdPress" },
+        "Description": "NerdPress Core Version",
+        "SourceBundle": {
+          "S3Bucket": "nerdpress-packages",
+          "S3Key": "Nerdpress-Core.zip"
+        }
+      }
+    },
+    "NerdPressDevelopmentTemplate": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": { "Ref": "NerdPress" },
+        "Description": "NerdPress Wordpress Development Template",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:autoscaling:asg",
+            "OptionName": "MinSize",
+            "Value": "1"
+          },
+          {
+            "Namespace": "aws:autoscaling:asg",
+            "OptionName": "MaxSize",
+            "Value": "6"
+          },
+          {
+            "Namespace": "aws:elasticbeanstalk:environment",
+            "OptionName": "EnvironmentType",
+            "Value": "LoadBalanced"
+          },
+          {
+              "Namespace": "aws:rds:dbinstance",
+              "OptionName": "DBUser",
+              "Value": { "Ref": "DBUser" }
+          },
+          {
+              "Namespace": "aws:rds:dbinstance",
+              "OptionName": "DBPassword",
+              "Value": { "Ref": "DBPassword" }
+          }
+        ],
+        "SolutionStackName": "64bit Amazon Linux 2015.03 v1.4.3 running Multi-container Docker 1.6.2 (Generic)"
+      }
+    },
+    "NerdPressProductionTemplate": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": { "Ref": "NerdPress" },
+        "Description": "NerdPress Wordpress Production Template",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:autoscaling:asg",
+            "OptionName": "MinSize",
+            "Value": "1"
+          },
+          {
+            "Namespace": "aws:autoscaling:asg",
+            "OptionName": "MaxSize",
+            "Value": "6"
+          },
+          {
+            "Namespace": "aws:elasticbeanstalk:environment",
+            "OptionName": "EnvironmentType",
+            "Value": "LoadBalanced"
+          },
+          {
+              "Namespace": "aws:rds:dbinstance",
+              "OptionName": "DBUser",
+              "Value": "Test1234"
+          },
+          {
+              "Namespace": "aws:rds:dbinstance",
+              "OptionName": "DBPassword",
+              "Value": "Test1234"
+          }
+        ],
+        "SolutionStackName": "64bit Amazon Linux 2015.03 v1.4.3 running Multi-container Docker 1.6.2 (Generic)"
+      }
+    },
+    "Production": {
+      "Type": "AWS::ElasticBeanstalk::Environment",
+      "Properties": {
+        "ApplicationName": { "Ref": "NerdPress" },
+        "Description": "NerdPress Wordpress Production",
+        "TemplateName": { "Ref": "NerdPressProductionTemplate" },
+        "VersionLabel": { "Ref": "NerdPressVersion" }
+      }
+    },
+    "Development": {
+      "Type": "AWS::ElasticBeanstalk::Environment",
+      "Properties": {
+        "ApplicationName": { "Ref": "NerdPress" },
+        "Description": "NerdPress Wordpress Development",
+        "TemplateName": { "Ref": "NerdPressDevelopmentTemplate" },
+        "VersionLabel": { "Ref": "NerdPressVersion" }
+      }
+    }
+  }
+  "Outputs" : {
+    "ProductionURL" : {
+      "Description" : "The URL of the Production Environment",
+      "Value" :  { "Fn::Join" : [ "", [ "http://", { "Fn::GetAtt" : ["Production", "EndpointURL"] }]]}
+    },
+    "DevelopmentURL" : {
+      "Description" : "The URL of the Development Environment",
+      "Value" :  { "Fn::Join" : [ "", [ "http://", { "Fn::GetAtt" : ["Development", "EndpointURL"] }]]}
+    }
+  }
+}
